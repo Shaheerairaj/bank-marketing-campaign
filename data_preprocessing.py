@@ -6,11 +6,8 @@ Created on Sat Mar 30 09:02:08 2024
 """
 
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 
 data_raw = pd.read_csv("Data/bank-full.csv", delimiter=";")
-
 
 # Getting the month digit
 month_to_numeric = {
@@ -34,13 +31,10 @@ map_yes_no = {'yes':1, 'no':0}
 for i in ['default','housing','loan','y']:
     data[i] = data[i].map(map_yes_no)
 
-# Seperating y variable
-y = data['y'].values
-
 # Dropping duration column since according to the UCI website, 
 # this variable highly effects the target, plus if a call is made
 # then y is known. Also dropping month categorical column
-data.drop(['duration','month','y'], axis=1, inplace=True)
+data.drop(['duration','month'], axis=1, inplace=True)
 
 # Replacing -1 in pdays with 0
 data['pdays'].replace(-1, 0, inplace=True)
@@ -55,15 +49,4 @@ data = pd.get_dummies(data, columns = ['job','marital','contact','poutcome'])
 # Dropping one column for each of the one-hot encoded variables
 data.drop(['job_unknown','marital_single','contact_unknown','poutcome_unknown'], axis=1, inplace=True)
 
-# Making array of predictor variables
-X = data.values
-
-# Train test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-
-# Featurn scaling
-sc = StandardScaler()
-X_train[:,[*range(2), *range(3,11)]] = sc.fit_transform(X_train[:,[*range(2), *range(3,11)]])
-X_test[:,[*range(2), *range(3,11)]] = sc.transform(X_test[:,[*range(2), *range(3,11)]])
-
-
+data.to_csv('Data/bank-full-preprocessed.csv',index=False)
