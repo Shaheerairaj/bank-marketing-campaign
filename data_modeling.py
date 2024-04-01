@@ -7,16 +7,16 @@ Created on Sun Mar 31 14:39:44 2024
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import statsmodels.api as sm
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import recall_score
-from sklearn.metrics import precision_score
+from sklearn.svm import SVC, LinearSVC
+from sklearn.metrics import accuracy_score, confusion_matrix, recall_score, precision_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 data = pd.read_csv('Data/bank-full-preprocessed.csv')
 
@@ -95,11 +95,77 @@ metrics_svc_conf_matrix = confusion_matrix(y_test, y_pred)
 
 
 # SVM Linear SVC
-lsvc = LinearSVC()
+iterations = [x for x in range(100,1001,100)]
+svm_acc = []
+for n in iterations:
+    lsvc = LinearSVC(max_iter = n, random_state=0)
+    lsvc.fit(X_train, y_train)
+    y_pred = lsvc.predict(X_test)
+    svm_acc.append(accuracy_score(y_test, y_pred))
+
+plt.plot(iterations, svm_acc)
+# max_iter of 400 gives the best results
+
+lsvc = LinearSVC(max_iter = n, random_state=0)
 lsvc.fit(X_train, y_train)
 y_pred = lsvc.predict(X_test)
+svm_acc.append(accuracy_score(y_test, y_pred))
 
 metrics_lsvc_acc = accuracy_score(y_test, y_pred)
 metrics_lsvc_recall = recall_score(y_test, y_pred)
 metrics_lsvc_prec = precision_score(y_test, y_pred)
 metrics_lsvc_conf_matrix = confusion_matrix(y_test, y_pred)
+
+
+# KNN Classification
+neighbors = [x for x in range(1,11)]
+acc = []
+
+for n in neighbors:
+    knn = KNeighborsClassifier(n_neighbors = n)
+    knn.fit(X_train, y_train)
+    y_pred = knn.predict(X_test)
+    acc.append(accuracy_score(y_test, y_pred))
+
+plt.plot(neighbors, acc)
+# n_neighbors tapers off after just 2 which makes sense since it's a binary classification model
+
+# Decision Tree Classifier
+criterion = ['gini','entropy']
+dt_acc = []
+for c in criterion:
+    dt = DecisionTreeClassifier(criterion=c)
+    dt.fit(X_train, y_train)
+    y_pred = dt.predict(X_test)
+    dt_acc.append(accuracy_score(y_test, y_pred))
+
+plt.plot(criterion, dt_acc)
+# Entropy seems to give the best results
+
+metrics_dt_acc = accuracy_score(y_test, y_pred)
+metrics_dt_recall = recall_score(y_test, y_pred)
+metrics_dt_prec = precision_score(y_test, y_pred)
+metrics_dt_conf_matrix = confusion_matrix(y_test, y_pred)
+
+
+# Random Forest
+estimators = [x for x in range(50, 501, 50)]
+rf_acc = []
+for e in estimators:
+    rf = RandomForestClassifier(n_estimators = e, criterion='entropy', random_state=0)
+    rf.fit(X_train, y_train)
+    y_pred = rf.predict(X_test)
+    rf_acc.append(accuracy_score(y_test, y_pred))
+
+plt.plot(estimators, rf_acc)
+# n_estimators = 250 seems to give the best results
+
+metrics_rf_acc = accuracy_score(y_test, y_pred)
+metrics_rf_recall = recall_score(y_test, y_pred)
+metrics_rf_prec = precision_score(y_test, y_pred)
+metrics_rf_conf_matrix = confusion_matrix(y_test, y_pred)
+
+np.mean(cross_val_score(rf, X_train, y_train, scoring='neg_mean_absolute_error', cv=3))
+
+
+
